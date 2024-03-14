@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Loan Application Form</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="title">Loan Application</h1>
+        <div class="inner-container">
+            <div class="form">
+                <form id="loanApplicationForm">
+                    <label for="loan_amnt">Loan Amount</label>
+                    <input type="number" class="loanInput" id="loan_amnt" name="loan_amnt">
+
+                    <label for="issue_month">Issue Month</label>
+                    <input type="number" class="loanInput" id="issue_month" name="issue_month">
+
+                    <label for="issue_year">Issue Year</label>
+                    <input type="number" class="loanInput" id="issue_year" name="issue_year">
+
+                    <label for="term_mths">Term (Months)</label>
+                    <input type="number" class="loanInput" id="term_mths" name="term_mths">
+
+                    <label for="annual_inc">Annual Income</label>
+                    <input type="number" class="loanInput" id="annual_inc" name="annual_inc">
+
+                    <label for="dti">Debt-to-Income Ratio</label>
+                    <input type="number" class="loanInput" id="dti" name="dti">
+
+                    <label for="fico_range_low">FICO Score (Low)</label>
+                    <input type="number" class="loanInput" id="fico_range_low" name="fico_range_low">
+                </form>
+            </div>
+            <div class="display">
+                <h2>Loan Approval Prediction</h2>
+                <div class="result">
+                    <div class="prediction default">
+                        <p><span id="prediction-result"></span></p>
+                    </div>
+                    <div class="confidence">
+                        <p><span id="probabilty-result"></span> </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <script>
+        $("form").submit(function(e) {
+            e.preventDefault();
+        })
+
+        $(document).ready(function() {
+            $(".loanInput").on("keyup", function(e){
+                let complete = true;
+                let inputs = $(".loanInput")
+                inputs.each(function(i, e){
+                    if($(e).val() === ""){
+                        complete = false;
+                    }
+                })
+
+                if(complete) {
+                    var loan_amnt = $("#loan_amnt").val();
+                    var issue_month = $("#issue_month").val();
+                    var issue_year = $("#issue_year").val();
+                    var term_mths = $("#term_mths").val();
+                    var annual_inc = $("#annual_inc").val();
+                    var dti = $("#dti").val();
+                    var fico_range_low = $("#fico_range_low").val();
+
+                    loan_amnt = parseFloat(loan_amnt);
+                    issue_month = parseInt(issue_month);
+                    issue_year = parseInt(issue_year);
+                    term_mths = parseInt(term_mths);
+                    annual_inc = parseFloat(annual_inc);
+                    dti = parseFloat(dti);
+                    fico_range_low = parseFloat(fico_range_low);
+
+                    axios({
+                            method: 'post',
+                            url: 'http://localhost:1000/predict',
+                            data: {
+                            loan_amnt: loan_amnt,
+                            issue_month: issue_month,
+                            issue_year: issue_year,
+                            term_mths: term_mths,
+                            annual_inc: annual_inc,
+                            dti: dti,
+                            fico_range_low: fico_range_low
+                    }})
+                        .then(function(response) {
+                            console.log(response.data);
+                            var prediction = response.data.prediction;
+                            var probability = response.data.probability;
+
+                            if(prediction === 1) {
+                                $('.prediction').removeClass('default').removeClass('rejected').addClass('approved');
+
+                                $("#prediction-result").text("Approved");
+                            } else if (prediction === 0){
+                                $('.prediction').removeClass('default').removeClass('approved').addClass('rejected');
+            
+                                $("#prediction-result").text("Denied");
+                            }
+
+                            $("#probabilty-result").text("Confidence: " + probability.toString().slice(0, 4));
+                    })
+                        .catch(function(error) {
+                            console.log(error);
+                    })
+                } else {
+                    $('.prediction').removeClass('approved').removeClass('rejected').addClass('default');
+                    $("#prediction-result").text("");
+                    $("#probabilty-result").text("");
+                }
+            })
+        })
+    </script>
+</body>
+</html>
